@@ -31,38 +31,60 @@
             font-size: 18px;
             margin-right: 5px;
         }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .options {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>PUBG 毒圈计时器</h1>
-    <div>
-        <label for="mapSelect">选择地图：</label>
-        <select id="mapSelect" onchange="updateCircles()">
-            <option value="erangel">Erangel</option>
-            <option value="sanhok">Sanhok</option>
-        </select>
+    <div class="options">
+        <div>
+            <label for="mapSelect">选择地图：</label>
+            <select id="mapSelect" onchange="updateCircles()">
+                <option value="erangel">Erangel</option>
+                <option value="sanhok">Sanhok</option>
+            </select>
+        </div>
+        <div>
+            <label for="circleSelect">从第几圈开始：</label>
+            <select id="circleSelect">
+                <option value="0">第 1 圈</option>
+                <option value="1">第 2 圈</option>
+                <option value="2">第 3 圈</option>
+                <option value="3">第 4 圈</option>
+                <option value="4">第 5 圈</option>
+                <option value="5">第 6 圈</option>
+                <option value="6">第 7 圈</option>
+                <option value="7">第 8 圈</option>
+            </select>
+        </div>
+        <div>
+            <label for="phaseSelect">选择阶段：</label>
+            <select id="phaseSelect">
+                <option value="wait">等待阶段</option>
+                <option value="shrink">缩圈阶段</option>
+            </select>
+        </div>
+        <button onclick="startTimer()">开始/重置计时</button>
     </div>
-    <div>
-        <label for="circleSelect">从第几圈开始：</label>
-        <select id="circleSelect" onchange="changeMap()">
-            <option value="0">第 1 圈</option>
-            <option value="1">第 2 圈</option>
-            <option value="2">第 3 圈</option>
-            <option value="3">第 4 圈</option>
-            <option value="4">第 5 圈</option>
-            <option value="5">第 6 圈</option>
-            <option value="6">第 7 圈</option>
-            <option value="7">第 8 圈</option>
-        </select>
-    </div>
-    <div>
-        <label for="phaseSelect">选择阶段：</label>
-        <select id="phaseSelect" onchange="changeMap()">
-            <option value="wait">等待阶段</option>
-            <option value="shrink">缩圈阶段</option>
-        </select>
-    </div>
-    <div id="timer">选择地图、圈数和阶段并等待游戏开始...</div>
+    <div id="timer">选择地图、圈数和阶段后点击“开始/重置计时”</div>
     <div id="alert">毒圈即将缩小！请尽快进入安全区！</div>
 
     <script>
@@ -122,7 +144,6 @@
                 option.textContent = `第 ${i + 1} 圈`;
                 circleSelect.appendChild(option);
             }
-            changeMap();
         }
 
         // 更新计时器
@@ -163,8 +184,8 @@
             timeLeft--;
         }
 
-        // 切换地图、圈数或阶段
-        function changeMap() {
+        // 开始或重置计时器
+        function startTimer() {
             selectedMap = mapSelect.value;
             currentCircle = parseInt(circleSelect.value);
             isWaiting = phaseSelect.value === 'wait';
