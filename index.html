@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUBG Blue Zone</title>
+    <title>PUBG 毒圈计时器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,54 +22,122 @@
             margin: 20px;
             display: none;
         }
+        select {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px;
+        }
+        label {
+            font-size: 18px;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>PUBG 毒圈计时器</h1>
-    <div id="timer">等待游戏开始...</div>
+    <div>
+        <label for="mapSelect">选择地图：</label>
+        <select id="mapSelect" onchange="updateCircles()">
+            <option value="erangel">Erangel</option>
+            <option value="sanhok">Sanhok</option>
+        </select>
+    </div>
+    <div>
+        <label for="circleSelect">从第几圈开始：</label>
+        <select id="circleSelect" onchange="changeMap()">
+            <option value="0">第 1 圈</option>
+            <option value="1">第 2 圈</option>
+            <option value="2">第 3 圈</option>
+            <option value="3">第 4 圈</option>
+            <option value="4">第 5 圈</option>
+            <option value="5">第 6 圈</option>
+            <option value="6">第 7 圈</option>
+            <option value="7">第 8 圈</option>
+        </select>
+    </div>
+    <div>
+        <label for="phaseSelect">选择阶段：</label>
+        <select id="phaseSelect" onchange="changeMap()">
+            <option value="wait">等待阶段</option>
+            <option value="shrink">缩圈阶段</option>
+        </select>
+    </div>
+    <div id="timer">选择地图、圈数和阶段并等待游戏开始...</div>
     <div id="alert">毒圈即将缩小！请尽快进入安全区！</div>
 
     <script>
-        // 毒圈数据：等待时间和缩圈时间（单位：秒）
-        const circles = [
-            { waitTime: 300, shrinkTime: 180 }, // 第一圈
-            { waitTime: 120, shrinkTime: 90 },  // 第二圈
-            { waitTime: 90, shrinkTime: 60 },   // 第三圈
-            { waitTime: 60, shrinkTime: 60 },   // 第四圈
-            { waitTime: 60, shrinkTime: 30 },   // 第五圈
-            { waitTime: 60, shrinkTime: 30 },   // 第六圈
-            { waitTime: 60, shrinkTime: 30 },   // 第七圈
-            { waitTime: 30, shrinkTime: 30 }    // 第八圈
-        ];
+        // 毒圈数据：不同地图的等待时间和缩圈时间（单位：秒）
+        const mapCircles = {
+            erangel: [
+                { waitTime: 300, shrinkTime: 180 }, // 第一圈
+                { waitTime: 120, shrinkTime: 90 },
+                { waitTime: 90, shrinkTime: 60 },
+                { waitTime: 60, shrinkTime: 60 },
+                { waitTime: 60, shrinkTime: 30 },
+                { waitTime: 60, shrinkTime: 30 },
+                { waitTime: 60, shrinkTime: 30 },
+                { waitTime: 30, shrinkTime: 30 }
+            ],
+            sanhok: [
+                { waitTime: 120, shrinkTime: 90 }, // 第一圈
+                { waitTime: 90, shrinkTime: 60 },
+                { waitTime: 60, shrinkTime: 60 },
+                { waitTime: 60, shrinkTime: 30 },
+                { waitTime: 30, shrinkTime: 30 },
+                { waitTime: 30, shrinkTime: 30 },
+                { waitTime: 30, shrinkTime: 15 },
+                { waitTime: 15, shrinkTime: 15 }
+            ]
+        };
 
-        let currentCircle = 0; // 当前毒圈索引
-        let totalTime = 0; // 当前毒圈总时间（等待+缩圈）
-        let timeLeft = 0; // 当前剩余时间
-        let isWaiting = true; // 是否在等待阶段
-        let alertShown = false; // 是否显示提示
+        let currentCircle = 0;
+        let totalTime = 0;
+        let timeLeft = 0;
+        let isWaiting = true;
+        let alertShown = false;
+        let selectedMap = 'erangel';
+        let timerInterval = null;
 
         const timerDisplay = document.getElementById('timer');
         const alertDisplay = document.getElementById('alert');
+        const mapSelect = document.getElementById('mapSelect');
+        const circleSelect = document.getElementById('circleSelect');
+        const phaseSelect = document.getElementById('phaseSelect');
 
-        // 格式化时间（秒 -> 分:秒）
+        // 格式化时间
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
         }
 
+        // 更新圈数选择选项（根据地图动态调整最大圈数）
+        function updateCircles() {
+            selectedMap = mapSelect.value;
+            const maxCircles = mapCircles[selectedMap].length;
+            circleSelect.innerHTML = '';
+            for (let i = 0; i < maxCircles; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `第 ${i + 1} 圈`;
+                circleSelect.appendChild(option);
+            }
+            changeMap();
+        }
+
         // 更新计时器
         function updateTimer() {
-            if (currentCircle >= circles.length) {
+            if (currentCircle >= mapCircles[selectedMap].length) {
                 timerDisplay.textContent = '游戏结束！';
+                clearInterval(timerInterval);
                 return;
             }
 
-            const circle = circles[currentCircle];
+            const circle = mapCircles[selectedMap][currentCircle];
             totalTime = isWaiting ? circle.waitTime : circle.shrinkTime;
-            timerDisplay.textContent = `第 ${currentCircle + 1} 圈 - ${isWaiting ? '等待阶段' : '缩圈阶段'} - 剩余时间: ${formatTime(timeLeft)}`;
+            timerDisplay.textContent = `${selectedMap.toUpperCase()} - 第 ${currentCircle + 1} 圈 - ${isWaiting ? '等待阶段' : '缩圈阶段'} - 剩余时间: ${formatTime(timeLeft)}`;
 
-            // 检查是否在毒圈结束前 30 秒
+            // 30秒前显示提示
             if (timeLeft <= 30 && !alertShown) {
                 alertDisplay.style.display = 'block';
                 alertShown = true;
@@ -86,8 +154,8 @@
                     isWaiting = true;
                     alertShown = false;
                     alertDisplay.style.display = 'none';
-                    if (currentCircle < circles.length) {
-                        timeLeft = circles[currentCircle].waitTime;
+                    if (currentCircle < mapCircles[selectedMap].length) {
+                        timeLeft = mapCircles[selectedMap][currentCircle].waitTime;
                     }
                 }
             }
@@ -95,14 +163,24 @@
             timeLeft--;
         }
 
-        // 每秒更新一次
-        function startTimer() {
-            timeLeft = circles[0].waitTime;
-            setInterval(updateTimer, 1000);
+        // 切换地图、圈数或阶段
+        function changeMap() {
+            selectedMap = mapSelect.value;
+            currentCircle = parseInt(circleSelect.value);
+            isWaiting = phaseSelect.value === 'wait';
+            alertShown = false;
+            alertDisplay.style.display = 'none';
+            const circle = mapCircles[selectedMap][currentCircle];
+            timeLeft = isWaiting ? circle.waitTime : circle.shrinkTime;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
         }
 
-        // 启动计时器
-        startTimer();
+        // 初始化
+        updateCircles();
     </script>
 </body>
 </html>
